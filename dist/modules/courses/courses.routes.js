@@ -4,71 +4,124 @@ exports.coursesRouter = void 0;
 const express_1 = require("express");
 const db_1 = require("../../config/db");
 exports.coursesRouter = (0, express_1.Router)();
+function toTitleCase(s) {
+    return s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+function mapCourseForApi(course) {
+    return {
+        id: course.id,
+        title: course.title,
+        slug: course.slug,
+        category: toTitleCase(course.category),
+        difficulty: toTitleCase(course.difficulty),
+        description: course.description,
+        instructor: course.instructor,
+        thumbnailUrl: course.thumbnailUrl,
+        totalMinutes: course.totalMinutes ?? undefined,
+        sections: (course.sections || []).map((s) => ({
+            id: s.id,
+            title: s.title,
+            order: s.order,
+            lessons: (s.lessons || []).map((l) => ({
+                id: l.id,
+                title: l.title,
+                order: l.order,
+                youtubeUrl: l.youtubeUrl,
+                durationMinutes: l.durationMinutes ?? undefined,
+            })),
+        })),
+    };
+}
 exports.coursesRouter.get("/", async (_req, res) => {
-    const courses = await db_1.prisma.course.findMany({
-        include: {
-            sections: {
-                orderBy: { order: "asc" },
-                include: {
-                    lessons: {
-                        orderBy: { order: "asc" },
+    try {
+        const courses = await db_1.prisma.course.findMany({
+            include: {
+                sections: {
+                    orderBy: { order: "asc" },
+                    include: {
+                        lessons: {
+                            orderBy: { order: "asc" },
+                        },
                     },
                 },
             },
-        },
-    });
-    res.json(courses);
+        });
+        const payload = courses.map(mapCourseForApi);
+        res.status(200).json(payload);
+    }
+    catch (err) {
+        console.error("GET /courses error:", err);
+        res.status(500).json({ error: { message: "Failed to load courses" } });
+    }
 });
 exports.coursesRouter.get("/:courseId", async (req, res) => {
-    const course = await db_1.prisma.course.findUnique({
-        where: { id: req.params.courseId },
-        include: {
-            sections: {
-                orderBy: { order: "asc" },
-                include: {
-                    lessons: {
-                        orderBy: { order: "asc" },
+    try {
+        const course = await db_1.prisma.course.findUnique({
+            where: { id: req.params.courseId },
+            include: {
+                sections: {
+                    orderBy: { order: "asc" },
+                    include: {
+                        lessons: {
+                            orderBy: { order: "asc" },
+                        },
                     },
                 },
             },
-        },
-    });
-    if (!course) {
-        return res.status(404).json({ error: { message: "Course not found" } });
+        });
+        if (!course) {
+            return res.status(404).json({ error: { message: "Course not found" } });
+        }
+        res.status(200).json(mapCourseForApi(course));
     }
-    res.json(course);
+    catch (err) {
+        console.error("GET /courses/:courseId error:", err);
+        res.status(500).json({ error: { message: "Failed to load course" } });
+    }
 });
 exports.coursesRouter.get("/:courseId/lessons", async (req, res) => {
-    const course = await db_1.prisma.course.findUnique({
-        where: { id: req.params.courseId },
-    });
-    if (!course) {
-        return res.status(404).json({ error: { message: "Course not found" } });
+    try {
+        const course = await db_1.prisma.course.findUnique({
+            where: { id: req.params.courseId },
+        });
+        if (!course) {
+            return res.status(404).json({ error: { message: "Course not found" } });
+        }
+        const sections = await db_1.prisma.section.findMany({
+            where: { courseId: course.id },
+            orderBy: { order: "asc" },
+            include: { lessons: { orderBy: { order: "asc" } } },
+        });
+        const lessons = sections.flatMap((s) => s.lessons);
+        res.status(200).json({ course: mapCourseForApi(course), lessons });
     }
-    const sections = await db_1.prisma.section.findMany({
-        where: { courseId: course.id },
-        orderBy: { order: "asc" },
-        include: { lessons: { orderBy: { order: "asc" } } },
-    });
-    const lessons = sections.flatMap((s) => s.lessons);
-    res.json({ course, lessons });
+    catch (err) {
+        console.error("GET /courses/:courseId/lessons error:", err);
+        res.status(500).json({ error: { message: "Failed to load lessons" } });
+    }
 });
 exports.coursesRouter.get("/:courseId/lessons/:lessonId", async (req, res) => {
-    const course = await db_1.prisma.course.findUnique({
-        where: { id: req.params.courseId },
-    });
-    if (!course) {
-        return res.status(404).json({ error: { message: "Course not found" } });
+    try {
+        const course = await db_1.prisma.course.findUnique({
+            where: { id: req.params.courseId },
+        });
+        if (!course) {
+            return res.status(404).json({ error: { message: "Course not found" } });
+        }
+        const sections = await db_1.prisma.section.findMany({
+            where: { courseId: course.id },
+            orderBy: { order: "asc" },
+            include: { lessons: { orderBy: { order: "asc" } } },
+        });
+        const lessons = sections.flatMap((s) => s.lessons);
+        const lesson = lessons.find((l) => l.id === req.params.lessonId);
+        if (!lesson) {
+            return res.status(404).json({ error: { message: "Lesson not found" } });
+        }
+        res.status(200).json({ course: mapCourseForApi(course), lesson, lessons });
     }
-    const sections = await db_1.prisma.section.findMany({
-        where: { courseId: course.id },
-        orderBy: { order: "asc" },
-        include: { lessons: { orderBy: { order: "asc" } } },
-    });
-    const lessons = sections.flatMap((s) => s.lessons);
-    const lesson = lessons.find((l) => l.id === req.params.lessonId);
-    if (!lesson) {
-        return res.status(404).json({ error: { message: "Lesson not found" } });
+    catch (err) {
+        console.error("GET /courses/:courseId/lessons/:lessonId error:", err);
+        res.status(500).json({ error: { message: "Failed to load lesson" } });
     }
-    res.json({ course, lesson, lessons });
 });

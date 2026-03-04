@@ -31,7 +31,7 @@ export async function registerHandler(req: Request, res: Response) {
       maxAge: security.refreshTokenTtlSeconds * 1000,
     });
 
-    return res.json({
+    return res.status(200).json({
       token: result.token,
       user: result.user,
     });
@@ -62,14 +62,21 @@ export async function loginHandler(req: Request, res: Response) {
       maxAge: security.refreshTokenTtlSeconds * 1000,
     });
 
-    return res.json({
+    return res.status(200).json({
       token: result.token,
       user: result.user,
     });
   } catch (err: any) {
+    const message = err?.message || "Login failed";
+    const isInvalidCreds =
+      message === "Invalid credentials" || message === "User is blocked";
     return res
-      .status(400)
-      .json({ error: { message: err?.message || "Login failed" } });
+      .status(isInvalidCreds ? 401 : 400)
+      .json({
+        error: {
+          message: isInvalidCreds ? "Invalid email or password" : message,
+        },
+      });
   }
 }
 
@@ -109,13 +116,16 @@ export async function refreshHandler(req: Request, res: Response) {
 }
 
 export async function logoutHandler(req: Request, res: Response) {
-  const token = req.cookies?.refresh_token as string | undefined;
-  if (token) {
-    const opts: { path: string; domain?: string } = { path: "/" };
-    if (env.cookieDomain) opts.domain = env.cookieDomain;
-    res.clearCookie("refresh_token", opts);
+  try {
+    const token = req.cookies?.refresh_token as string | undefined;
+    if (token) {
+      const opts: { path: string; domain?: string } = { path: "/" };
+      if (env.cookieDomain) opts.domain = env.cookieDomain;
+      res.clearCookie("refresh_token", opts);
+    }
+  } catch (_) {
+    // ignore; always respond 200 so frontend can clear state
   }
-
-  return res.json({ success: true });
+  return res.status(200).json({ success: true });
 }
 
