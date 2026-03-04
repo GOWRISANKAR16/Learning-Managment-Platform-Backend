@@ -15,6 +15,9 @@ const adapter = new adapter_mariadb_1.PrismaMariaDb({
     password: decodeURIComponent(dbUrl.password),
     database: dbUrl.pathname.replace(/^\//, ""),
     ssl: { rejectUnauthorized: false },
+    connectionLimit: 10,
+    connectTimeout: 15000,
+    idleTimeout: 30000,
 });
 const prisma = global.__prisma__ || new client_1.PrismaClient({ adapter });
 exports.prisma = prisma;

@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from "express";
+import { isDbConnectionError } from "../utils/dbError";
 
 export function errorHandler(
   err: unknown,
@@ -12,9 +13,12 @@ export function errorHandler(
     return;
   }
 
-  res.status(500).json({
+  const isDbDown = isDbConnectionError(err);
+  res.status(isDbDown ? 503 : 500).json({
     error: {
-      message: "Internal server error",
+      message: isDbDown
+        ? "Database temporarily unavailable"
+        : "Internal server error",
     },
   });
 }

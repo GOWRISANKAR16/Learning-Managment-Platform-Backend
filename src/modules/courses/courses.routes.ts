@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { prisma } from "../../config/db";
+import { isDbConnectionError } from "../../utils/dbError";
 
 export const coursesRouter = Router();
 
@@ -51,7 +52,10 @@ coursesRouter.get("/", async (_req, res) => {
     res.status(200).json(payload);
   } catch (err) {
     console.error("GET /courses error:", err);
-    res.status(500).json({ error: { message: "Failed to load courses" } });
+    const status = isDbConnectionError(err) ? 503 : 500;
+    const message =
+      status === 503 ? "Database temporarily unavailable" : "Failed to load courses";
+    res.status(status).json({ error: { message } });
   }
 });
 
@@ -76,7 +80,10 @@ coursesRouter.get("/:courseId", async (req, res) => {
     res.status(200).json(mapCourseForApi(course));
   } catch (err) {
     console.error("GET /courses/:courseId error:", err);
-    res.status(500).json({ error: { message: "Failed to load course" } });
+    const status = isDbConnectionError(err) ? 503 : 500;
+    const message =
+      status === 503 ? "Database temporarily unavailable" : "Failed to load course";
+    res.status(status).json({ error: { message } });
   }
 });
 
@@ -100,7 +107,10 @@ coursesRouter.get("/:courseId/lessons", async (req, res) => {
     res.status(200).json({ course: mapCourseForApi(course), lessons });
   } catch (err) {
     console.error("GET /courses/:courseId/lessons error:", err);
-    res.status(500).json({ error: { message: "Failed to load lessons" } });
+    const status = isDbConnectionError(err) ? 503 : 500;
+    const message =
+      status === 503 ? "Database temporarily unavailable" : "Failed to load lessons";
+    res.status(status).json({ error: { message } });
   }
 });
 
@@ -129,7 +139,10 @@ coursesRouter.get("/:courseId/lessons/:lessonId", async (req, res) => {
     res.status(200).json({ course: mapCourseForApi(course), lesson, lessons });
   } catch (err) {
     console.error("GET /courses/:courseId/lessons/:lessonId error:", err);
-    res.status(500).json({ error: { message: "Failed to load lesson" } });
+    const status = isDbConnectionError(err) ? 503 : 500;
+    const message =
+      status === 503 ? "Database temporarily unavailable" : "Failed to load lesson";
+    res.status(status).json({ error: { message } });
   }
 });
 

@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.coursesRouter = void 0;
 const express_1 = require("express");
 const db_1 = require("../../config/db");
+const dbError_1 = require("../../utils/dbError");
 exports.coursesRouter = (0, express_1.Router)();
 function toTitleCase(s) {
     return s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
@@ -51,7 +52,9 @@ exports.coursesRouter.get("/", async (_req, res) => {
     }
     catch (err) {
         console.error("GET /courses error:", err);
-        res.status(500).json({ error: { message: "Failed to load courses" } });
+        const status = (0, dbError_1.isDbConnectionError)(err) ? 503 : 500;
+        const message = status === 503 ? "Database temporarily unavailable" : "Failed to load courses";
+        res.status(status).json({ error: { message } });
     }
 });
 exports.coursesRouter.get("/:courseId", async (req, res) => {
@@ -76,7 +79,9 @@ exports.coursesRouter.get("/:courseId", async (req, res) => {
     }
     catch (err) {
         console.error("GET /courses/:courseId error:", err);
-        res.status(500).json({ error: { message: "Failed to load course" } });
+        const status = (0, dbError_1.isDbConnectionError)(err) ? 503 : 500;
+        const message = status === 503 ? "Database temporarily unavailable" : "Failed to load course";
+        res.status(status).json({ error: { message } });
     }
 });
 exports.coursesRouter.get("/:courseId/lessons", async (req, res) => {
@@ -97,7 +102,9 @@ exports.coursesRouter.get("/:courseId/lessons", async (req, res) => {
     }
     catch (err) {
         console.error("GET /courses/:courseId/lessons error:", err);
-        res.status(500).json({ error: { message: "Failed to load lessons" } });
+        const status = (0, dbError_1.isDbConnectionError)(err) ? 503 : 500;
+        const message = status === 503 ? "Database temporarily unavailable" : "Failed to load lessons";
+        res.status(status).json({ error: { message } });
     }
 });
 exports.coursesRouter.get("/:courseId/lessons/:lessonId", async (req, res) => {
@@ -122,6 +129,8 @@ exports.coursesRouter.get("/:courseId/lessons/:lessonId", async (req, res) => {
     }
     catch (err) {
         console.error("GET /courses/:courseId/lessons/:lessonId error:", err);
-        res.status(500).json({ error: { message: "Failed to load lesson" } });
+        const status = (0, dbError_1.isDbConnectionError)(err) ? 503 : 500;
+        const message = status === 503 ? "Database temporarily unavailable" : "Failed to load lesson";
+        res.status(status).json({ error: { message } });
     }
 });
