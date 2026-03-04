@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { env } from "../../config/env";
 import { security } from "../../config/security";
+import { prisma } from "../../config/db";
 import {
   loginUser,
   refreshAccessToken,
@@ -77,10 +78,19 @@ export async function meHandler(req: AuthenticatedRequest, res: Response) {
     return res.status(401).json({ error: { message: "Unauthorized" } });
   }
 
+  const user = await prisma.user.findUnique({
+    where: { id: req.user.sub },
+    select: { id: true, name: true, email: true, role: true },
+  });
+  if (!user) {
+    return res.status(401).json({ error: { message: "Unauthorized" } });
+  }
+
   return res.json({
-    id: req.user.sub,
-    email: req.user.email,
-    role: req.user.role,
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role.toLowerCase(),
   });
 }
 
@@ -101,10 +111,9 @@ export async function refreshHandler(req: Request, res: Response) {
 export async function logoutHandler(req: Request, res: Response) {
   const token = req.cookies?.refresh_token as string | undefined;
   if (token) {
-    res.clearCookie("refresh_token", {
-      domain: env.cookieDomain,
-      path: "/",
-    });
+    const opts: { path: string; domain?: string } = { path: "/" };
+    if (env.cookieDomain) opts.domain = env.cookieDomain;
+    res.clearCookie("refresh_token", opts);
   }
 
   return res.json({ success: true });

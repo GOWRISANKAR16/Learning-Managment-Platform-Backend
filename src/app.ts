@@ -28,6 +28,14 @@ app.use(
   })
 );
 
+app.get("/", (_req, res) => {
+  res.json({
+    message: "LMS API",
+    health: "/health",
+    docs: "Use /auth, /courses, /users/.../progress, etc.",
+  });
+});
+
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
@@ -40,6 +48,10 @@ app.use("/", assignmentsRouter);
 app.use("/admin/courses", adminCoursesRouter);
 app.use("/admin/users", adminUsersRouter);
 app.use("/admin/assignments", adminAssignmentsRouter);
+
+app.use((_req, res) => {
+  res.status(404).json({ error: { message: "Not found" } });
+});
 
 app.use(errorHandler);
 

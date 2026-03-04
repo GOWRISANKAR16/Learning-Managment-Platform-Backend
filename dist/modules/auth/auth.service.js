@@ -62,7 +62,7 @@ async function registerUser(input) {
             status: "ACTIVE",
         },
     });
-    return issueTokensForUser(user.id, user.email, "student");
+    return issueTokensForUser(user.id, user.email, user.name, "student");
 }
 async function loginUser(input) {
     const user = await db_1.prisma.user.findUnique({
@@ -78,7 +78,7 @@ async function loginUser(input) {
     if (!ok) {
         throw new Error("Invalid credentials");
     }
-    return issueTokensForUser(user.id, user.email, user.role.toLowerCase());
+    return issueTokensForUser(user.id, user.email, user.name, user.role.toLowerCase());
 }
 async function refreshAccessToken(jwtRefreshToken) {
     try {
@@ -105,7 +105,7 @@ async function revokeRefreshToken(rawId) {
         data: { revokedAt: new Date() },
     });
 }
-async function issueTokensForUser(userId, email, role) {
+async function issueTokensForUser(userId, email, name, role) {
     const token = (0, jwt_1.signAccessToken)(userId, email, role);
     const rawId = crypto_1.default.randomUUID();
     const now = new Date();
@@ -122,6 +122,6 @@ async function issueTokensForUser(userId, email, role) {
     return {
         token,
         refreshToken,
-        user: { id: userId, name: email.split("@")[0], email, role },
+        user: { id: userId, name, email, role },
     };
 }

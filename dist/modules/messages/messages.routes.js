@@ -5,8 +5,7 @@ const express_1 = require("express");
 const db_1 = require("../../config/db");
 const authMiddleware_1 = require("../../middleware/authMiddleware");
 exports.messagesRouter = (0, express_1.Router)();
-exports.messagesRouter.use(authMiddleware_1.authMiddleware);
-exports.messagesRouter.get("/users/:userId/threads", async (req, res) => {
+exports.messagesRouter.get("/users/:userId/threads", authMiddleware_1.authMiddleware, async (req, res) => {
     const { userId } = req.params;
     if (req.user?.sub !== userId && req.user?.role !== "admin") {
         return res.status(403).json({ error: { message: "Forbidden" } });
@@ -21,7 +20,7 @@ exports.messagesRouter.get("/users/:userId/threads", async (req, res) => {
     });
     res.json(threads);
 });
-exports.messagesRouter.post("/users/:userId/threads", async (req, res) => {
+exports.messagesRouter.post("/users/:userId/threads", authMiddleware_1.authMiddleware, async (req, res) => {
     const { userId } = req.params;
     if (req.user?.sub !== userId && req.user?.role !== "admin") {
         return res.status(403).json({ error: { message: "Forbidden" } });
@@ -36,7 +35,7 @@ exports.messagesRouter.post("/users/:userId/threads", async (req, res) => {
     });
     res.status(201).json(thread);
 });
-exports.messagesRouter.get("/threads/:threadId/messages", async (req, res) => {
+exports.messagesRouter.get("/threads/:threadId/messages", authMiddleware_1.authMiddleware, async (req, res) => {
     const thread = await db_1.prisma.thread.findUnique({
         where: { id: req.params.threadId },
         include: { messages: { orderBy: { createdAt: "asc" } } },
@@ -46,7 +45,7 @@ exports.messagesRouter.get("/threads/:threadId/messages", async (req, res) => {
     }
     res.json(thread.messages);
 });
-exports.messagesRouter.post("/threads/:threadId/messages", async (req, res) => {
+exports.messagesRouter.post("/threads/:threadId/messages", authMiddleware_1.authMiddleware, async (req, res) => {
     const thread = await db_1.prisma.thread.findUnique({
         where: { id: req.params.threadId },
     });
@@ -65,7 +64,7 @@ exports.messagesRouter.post("/threads/:threadId/messages", async (req, res) => {
     });
     res.status(201).json({ message });
 });
-exports.messagesRouter.patch("/threads/:threadId/read", async (req, res) => {
+exports.messagesRouter.patch("/threads/:threadId/read", authMiddleware_1.authMiddleware, async (req, res) => {
     const thread = await db_1.prisma.thread.findUnique({
         where: { id: req.params.threadId },
     });

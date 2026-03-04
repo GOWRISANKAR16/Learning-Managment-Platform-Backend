@@ -4,9 +4,7 @@ import { authMiddleware, AuthenticatedRequest } from "../../middleware/authMiddl
 
 export const progressRouter = Router();
 
-progressRouter.use(authMiddleware);
-
-progressRouter.post("/users/:userId/progress", async (req: AuthenticatedRequest, res) => {
+progressRouter.post("/users/:userId/progress", authMiddleware, async (req: AuthenticatedRequest, res) => {
   const { userId } = req.params;
   if (req.user?.sub !== userId && req.user?.role !== "admin") {
     return res.status(403).json({ error: { message: "Forbidden" } });
@@ -46,6 +44,7 @@ progressRouter.post("/users/:userId/progress", async (req: AuthenticatedRequest,
 
 progressRouter.get(
   "/users/:userId/progress/:courseId",
+  authMiddleware,
   async (req: AuthenticatedRequest, res) => {
     const { userId, courseId } = req.params;
     if (req.user?.sub !== userId && req.user?.role !== "admin") {
@@ -75,6 +74,7 @@ progressRouter.get(
 
 progressRouter.get(
   "/courses/:courseId/progress-summary",
+  authMiddleware,
   async (req: AuthenticatedRequest, res) => {
     const userId = req.user!.sub;
     const { courseId } = req.params;

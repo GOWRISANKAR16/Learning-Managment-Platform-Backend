@@ -5,10 +5,9 @@ import { requireRole } from "../../middleware/roleMiddleware";
 
 export const assignmentsRouter = Router();
 
-assignmentsRouter.use(authMiddleware);
-
 assignmentsRouter.get(
   "/users/:userId/assignments",
+  authMiddleware,
   async (req: AuthenticatedRequest, res) => {
     const { userId } = req.params;
     if (req.user?.sub !== userId && req.user?.role !== "admin") {
@@ -22,6 +21,7 @@ assignmentsRouter.get(
 
 assignmentsRouter.get(
   "/assignments/:assignmentId",
+  authMiddleware,
   async (_req: AuthenticatedRequest, res) => {
     const assignment = await prisma.assignment.findUnique({
       where: { id: _req.params.assignmentId },
@@ -37,6 +37,7 @@ assignmentsRouter.get(
 
 assignmentsRouter.get(
   "/assignments/:assignmentId/submissions/:userId",
+  authMiddleware,
   async (req: AuthenticatedRequest, res) => {
     const { assignmentId, userId } = req.params;
     if (req.user?.sub !== userId && req.user?.role !== "admin") {
@@ -59,6 +60,7 @@ assignmentsRouter.get(
 
 assignmentsRouter.post(
   "/assignments/:assignmentId/submissions",
+  authMiddleware,
   async (req: AuthenticatedRequest, res) => {
     const { assignmentId } = req.params;
     const userId = req.user!.sub;

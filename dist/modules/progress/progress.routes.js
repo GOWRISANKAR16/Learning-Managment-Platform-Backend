@@ -5,8 +5,7 @@ const express_1 = require("express");
 const db_1 = require("../../config/db");
 const authMiddleware_1 = require("../../middleware/authMiddleware");
 exports.progressRouter = (0, express_1.Router)();
-exports.progressRouter.use(authMiddleware_1.authMiddleware);
-exports.progressRouter.post("/users/:userId/progress", async (req, res) => {
+exports.progressRouter.post("/users/:userId/progress", authMiddleware_1.authMiddleware, async (req, res) => {
     const { userId } = req.params;
     if (req.user?.sub !== userId && req.user?.role !== "admin") {
         return res.status(403).json({ error: { message: "Forbidden" } });
@@ -34,7 +33,7 @@ exports.progressRouter.post("/users/:userId/progress", async (req, res) => {
     });
     res.json({ success: true, progress });
 });
-exports.progressRouter.get("/users/:userId/progress/:courseId", async (req, res) => {
+exports.progressRouter.get("/users/:userId/progress/:courseId", authMiddleware_1.authMiddleware, async (req, res) => {
     const { userId, courseId } = req.params;
     if (req.user?.sub !== userId && req.user?.role !== "admin") {
         return res.status(403).json({ error: { message: "Forbidden" } });
@@ -52,7 +51,7 @@ exports.progressRouter.get("/users/:userId/progress/:courseId", async (req, res)
     }
     res.json({ courseId, lessons });
 });
-exports.progressRouter.get("/courses/:courseId/progress-summary", async (req, res) => {
+exports.progressRouter.get("/courses/:courseId/progress-summary", authMiddleware_1.authMiddleware, async (req, res) => {
     const userId = req.user.sub;
     const { courseId } = req.params;
     const totalLessons = await db_1.prisma.lesson.count({

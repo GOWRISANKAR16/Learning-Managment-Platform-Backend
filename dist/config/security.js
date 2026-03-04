@@ -9,9 +9,9 @@ exports.security = {
     jwtRefreshSecret: env_1.env.jwtRefreshSecret,
     cookieOptions: {
         httpOnly: true,
-        secure: true,
+        secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
-        domain: env_1.env.cookieDomain,
         path: "/",
+        ...(env_1.env.cookieDomain && { domain: env_1.env.cookieDomain }),
     },
 };

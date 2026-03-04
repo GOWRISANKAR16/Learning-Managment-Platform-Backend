@@ -4,10 +4,9 @@ import { authMiddleware, AuthenticatedRequest } from "../../middleware/authMiddl
 
 export const messagesRouter = Router();
 
-messagesRouter.use(authMiddleware);
-
 messagesRouter.get(
   "/users/:userId/threads",
+  authMiddleware,
   async (req: AuthenticatedRequest, res) => {
     const { userId } = req.params;
     if (req.user?.sub !== userId && req.user?.role !== "admin") {
@@ -29,6 +28,7 @@ messagesRouter.get(
 
 messagesRouter.post(
   "/users/:userId/threads",
+  authMiddleware,
   async (req: AuthenticatedRequest, res) => {
     const { userId } = req.params;
     if (req.user?.sub !== userId && req.user?.role !== "admin") {
@@ -52,7 +52,7 @@ messagesRouter.post(
   }
 );
 
-messagesRouter.get("/threads/:threadId/messages", async (req, res) => {
+messagesRouter.get("/threads/:threadId/messages", authMiddleware, async (req, res) => {
   const thread = await prisma.thread.findUnique({
     where: { id: req.params.threadId },
     include: { messages: { orderBy: { createdAt: "asc" } } },
@@ -67,6 +67,7 @@ messagesRouter.get("/threads/:threadId/messages", async (req, res) => {
 
 messagesRouter.post(
   "/threads/:threadId/messages",
+  authMiddleware,
   async (req: AuthenticatedRequest, res) => {
     const thread = await prisma.thread.findUnique({
       where: { id: req.params.threadId },
@@ -95,6 +96,7 @@ messagesRouter.post(
 
 messagesRouter.patch(
   "/threads/:threadId/read",
+  authMiddleware,
   async (req: AuthenticatedRequest, res) => {
     const thread = await prisma.thread.findUnique({
       where: { id: req.params.threadId },

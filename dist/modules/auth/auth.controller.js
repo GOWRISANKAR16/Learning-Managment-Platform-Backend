@@ -7,6 +7,7 @@ exports.refreshHandler = refreshHandler;
 exports.logoutHandler = logoutHandler;
 const env_1 = require("../../config/env");
 const security_1 = require("../../config/security");
+const db_1 = require("../../config/db");
 const auth_service_1 = require("./auth.service");
 async function registerHandler(req, res) {
     try {
@@ -60,10 +61,18 @@ async function meHandler(req, res) {
     if (!req.user) {
         return res.status(401).json({ error: { message: "Unauthorized" } });
     }
+    const user = await db_1.prisma.user.findUnique({
+        where: { id: req.user.sub },
+        select: { id: true, name: true, email: true, role: true },
+    });
+    if (!user) {
+        return res.status(401).json({ error: { message: "Unauthorized" } });
+    }
     return res.json({
-        id: req.user.sub,
-        email: req.user.email,
-        role: req.user.role,
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role.toLowerCase(),
     });
 }
 async function refreshHandler(req, res) {
@@ -80,10 +89,10 @@ async function refreshHandler(req, res) {
 async function logoutHandler(req, res) {
     const token = req.cookies?.refresh_token;
     if (token) {
-        res.clearCookie("refresh_token", {
-            domain: env_1.env.cookieDomain,
-            path: "/",
-        });
+        const opts = { path: "/" };
+        if (env_1.env.cookieDomain)
+            opts.domain = env_1.env.cookieDomain;
+        res.clearCookie("refresh_token", opts);
     }
     return res.json({ success: true });
 }

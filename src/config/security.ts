@@ -7,10 +7,10 @@ export const security = {
   jwtRefreshSecret: env.jwtRefreshSecret,
   cookieOptions: {
     httpOnly: true as const,
-    secure: true as const,
+    secure: process.env.NODE_ENV === "production",
     sameSite: "lax" as const,
-    domain: env.cookieDomain,
     path: "/",
+    ...(env.cookieDomain && { domain: env.cookieDomain }),
   },
 };
 

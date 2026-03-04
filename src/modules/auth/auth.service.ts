@@ -34,7 +34,7 @@ export async function registerUser(input: {
     },
   });
 
-  return issueTokensForUser(user.id, user.email, "student");
+  return issueTokensForUser(user.id, user.email, user.name, "student");
 }
 
 export async function loginUser(input: {
@@ -63,6 +63,7 @@ export async function loginUser(input: {
   return issueTokensForUser(
     user.id,
     user.email,
+    user.name,
     user.role.toLowerCase() as Role
   );
 }
@@ -111,6 +112,7 @@ export async function revokeRefreshToken(rawId: string): Promise<void> {
 async function issueTokensForUser(
   userId: string,
   email: string,
+  name: string,
   role: Role
 ) {
   const token = signAccessToken(userId, email, role);
@@ -135,7 +137,7 @@ async function issueTokensForUser(
   return {
     token,
     refreshToken,
-    user: { id: userId, name: email.split("@")[0], email, role },
+    user: { id: userId, name, email, role },
   };
 }
 

@@ -25,6 +25,13 @@ exports.app.use((0, cors_1.default)({
     origin: env_1.env.corsOrigin,
     credentials: true,
 }));
+exports.app.get("/", (_req, res) => {
+    res.json({
+        message: "LMS API",
+        health: "/health",
+        docs: "Use /auth, /courses, /users/.../progress, etc.",
+    });
+});
 exports.app.get("/health", (_req, res) => {
     res.json({ status: "ok" });
 });
@@ -36,4 +43,7 @@ exports.app.use("/", assignments_routes_1.assignmentsRouter);
 exports.app.use("/admin/courses", admin_courses_routes_1.adminCoursesRouter);
 exports.app.use("/admin/users", admin_users_routes_1.adminUsersRouter);
 exports.app.use("/admin/assignments", assignments_routes_1.adminAssignmentsRouter);
+exports.app.use((_req, res) => {
+    res.status(404).json({ error: { message: "Not found" } });
+});
 exports.app.use(errorHandler_1.errorHandler);
