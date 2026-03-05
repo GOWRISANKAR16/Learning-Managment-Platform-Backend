@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { env } from "../../config/env";
 import { security } from "../../config/security";
-import { prisma } from "../../config/db";
+import { queryOne } from "../../config/db";
 import {
   loginUser,
   refreshAccessToken,
@@ -85,10 +85,10 @@ export async function meHandler(req: AuthenticatedRequest, res: Response) {
     return res.status(401).json({ error: { message: "Unauthorized" } });
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: req.user.sub },
-    select: { id: true, name: true, email: true, role: true },
-  });
+  const user = await queryOne<{ id: string; name: string; email: string; role: string }>(
+    "SELECT id, name, email, role FROM users WHERE id = ?",
+    [req.user.sub]
+  );
   if (!user) {
     return res.status(401).json({ error: { message: "Unauthorized" } });
   }

@@ -5,7 +5,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const supertest_1 = __importDefault(require("supertest"));
 jest.mock("../config/db", () => ({
-    prisma: {},
+    pool: { execute: jest.fn() },
+    query: jest.fn().mockResolvedValue([]),
+    queryOne: jest.fn().mockResolvedValue(null),
 }));
 const app_1 = require("../app");
 describe("Health endpoint", () => {

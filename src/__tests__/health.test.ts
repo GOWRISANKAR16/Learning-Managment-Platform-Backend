@@ -1,7 +1,9 @@
 import request from "supertest";
 
 jest.mock("../config/db", () => ({
-  prisma: {},
+  pool: { execute: jest.fn() },
+  query: jest.fn().mockResolvedValue([]),
+  queryOne: jest.fn().mockResolvedValue(null),
 }));
 
 import { app } from "../app";

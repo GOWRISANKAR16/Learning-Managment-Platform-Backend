@@ -7,15 +7,6 @@ import { errorHandler } from "./middleware/errorHandler";
 import { authRouter } from "./modules/auth/auth.routes";
 import { coursesRouter } from "./modules/courses/courses.routes";
 import { progressRouter } from "./modules/progress/progress.routes";
-import { messagesRouter } from "./modules/messages/messages.routes";
-import {
-  adminAssignmentsRouter,
-  assignmentsRouter,
-} from "./modules/assignments/assignments.routes";
-import { adminCoursesRouter } from "./modules/admin/admin.courses.routes";
-import { adminUsersRouter } from "./modules/admin/admin.users.routes";
-
-import { apiRouter } from "./modules/api/api.routes";
 
 export const app = express();
 
@@ -25,7 +16,11 @@ app.use(requestLogger);
 
 app.use(
   cors({
-    origin: env.corsOrigin,
+    origin: (origin, cb) => {
+      const allowed = env.corsOrigins;
+      if (!origin || allowed.includes(origin)) return cb(null, true);
+      return cb(null, allowed[0]);
+    },
     credentials: true,
   })
 );
@@ -45,13 +40,6 @@ app.get("/health", (_req, res) => {
 app.use("/auth", authRouter);
 app.use("/courses", coursesRouter);
 app.use("/", progressRouter);
-app.use("/", messagesRouter);
-app.use("/", assignmentsRouter);
-app.use("/admin/courses", adminCoursesRouter);
-app.use("/admin/users", adminUsersRouter);
-app.use("/admin/assignments", adminAssignmentsRouter);
-
-app.use("/api", apiRouter);
 
 app.use((_req, res) => {
   res.status(404).json({ error: { message: "Not found" } });

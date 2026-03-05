@@ -67,10 +67,7 @@ async function meHandler(req, res) {
     if (!req.user) {
         return res.status(401).json({ error: { message: "Unauthorized" } });
     }
-    const user = await db_1.prisma.user.findUnique({
-        where: { id: req.user.sub },
-        select: { id: true, name: true, email: true, role: true },
-    });
+    const user = await (0, db_1.queryOne)("SELECT id, name, email, role FROM users WHERE id = ?", [req.user.sub]);
     if (!user) {
         return res.status(401).json({ error: { message: "Unauthorized" } });
     }

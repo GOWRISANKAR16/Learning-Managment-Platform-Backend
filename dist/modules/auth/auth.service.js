@@ -45,79 +45,62 @@ const password_1 = require("../../utils/password");
 const jwt_1 = require("../../utils/jwt");
 const security_1 = require("../../config/security");
 const crypto_1 = __importDefault(require("crypto"));
+function uuid() {
+    return crypto_1.default.randomUUID();
+}
 async function registerUser(input) {
-    const existing = await db_1.prisma.user.findUnique({
-        where: { email: input.email },
-    });
+    const existing = await (0, db_1.queryOne)("SELECT id FROM users WHERE email = ?", [input.email]);
     if (existing) {
         throw new Error("Email already in use");
     }
     const passwordHash = await (0, password_1.hashPassword)(input.password);
-    const user = await db_1.prisma.user.create({
-        data: {
-            name: input.name,
-            email: input.email,
-            passwordHash,
-            role: "STUDENT",
-            status: "ACTIVE",
-        },
-    });
-    return issueTokensForUser(user.id, user.email, user.name, "student");
+    const id = uuid();
+    await db_1.pool.execute("INSERT INTO users (id, name, email, password_hash, role, status) VALUES (?, ?, ?, ?, 'student', 'active')", [id, input.name, input.email, passwordHash]);
+    return issueTokensForUser(id, input.email, input.name, "student");
 }
 async function loginUser(input) {
-    const user = await db_1.prisma.user.findUnique({
-        where: { email: input.email },
-    });
+    const user = await (0, db_1.queryOne)("SELECT * FROM users WHERE email = ?", [
+        input.email,
+    ]);
     if (!user) {
         throw new Error("Invalid credentials");
     }
-    if (user.status === "BLOCKED") {
+    if (user.status === "blocked") {
         throw new Error("User is blocked");
     }
-    const ok = await (0, password_1.verifyPassword)(input.password, user.passwordHash);
+    const ok = await (0, password_1.verifyPassword)(input.password, user.password_hash);
     if (!ok) {
         throw new Error("Invalid credentials");
     }
-    return issueTokensForUser(user.id, user.email, user.name, user.role.toLowerCase());
+    const role = user.role.toLowerCase();
+    return issueTokensForUser(user.id, user.email, user.name, role);
 }
 async function refreshAccessToken(jwtRefreshToken) {
     try {
-        const decoded = (await Promise.resolve().then(() => __importStar(require("jsonwebtoken")))).default.verify(jwtRefreshToken, security_1.security.jwtRefreshSecret);
-        const existing = await db_1.prisma.refreshToken.findUnique({
-            where: { id: decoded.tid },
-            include: { user: true },
-        });
-        if (!existing ||
-            existing.revokedAt ||
-            existing.expiresAt < new Date()) {
+        const jwt = await Promise.resolve().then(() => __importStar(require("jsonwebtoken")));
+        const decoded = jwt.default.verify(jwtRefreshToken, security_1.security.jwtRefreshSecret);
+        const rows = await (0, db_1.query)("SELECT r.user_id, r.expires_at, r.revoked_at, u.email, u.name, u.role FROM refresh_tokens r JOIN users u ON u.id = r.user_id WHERE r.id = ?", [decoded.tid]);
+        const row = rows && rows[0];
+        if (!row || row.revoked_at || new Date(row.expires_at) < new Date()) {
             return null;
         }
-        const token = (0, jwt_1.signAccessToken)(existing.user.id, existing.user.email, existing.user.role.toLowerCase());
-        return { token, refreshTokenId: existing.id };
+        const role = row.role.toLowerCase();
+        const token = (0, jwt_1.signAccessToken)(row.user_id, row.email, role);
+        return { token, refreshTokenId: decoded.tid };
     }
     catch {
         return null;
     }
 }
 async function revokeRefreshToken(rawId) {
-    await db_1.prisma.refreshToken.updateMany({
-        where: { id: rawId, revokedAt: null },
-        data: { revokedAt: new Date() },
-    });
+    await db_1.pool.execute("UPDATE refresh_tokens SET revoked_at = CURRENT_TIMESTAMP(3) WHERE id = ? AND revoked_at IS NULL", [rawId]);
 }
 async function issueTokensForUser(userId, email, name, role) {
     const token = (0, jwt_1.signAccessToken)(userId, email, role);
-    const rawId = crypto_1.default.randomUUID();
+    const rawId = uuid();
     const now = new Date();
     const expiresAt = new Date(now.getTime() + security_1.security.refreshTokenTtlSeconds * 1000);
-    await db_1.prisma.refreshToken.create({
-        data: {
-            id: rawId,
-            userId,
-            tokenHash: rawId,
-            expiresAt,
-        },
-    });
+    await db_1.pool.execute("INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at) VALUES (?, ?, ?, ?)", [rawId, userId, rawId, expiresAt]);
     const refreshToken = (0, jwt_1.signRefreshToken)(rawId);
     return {
         token,

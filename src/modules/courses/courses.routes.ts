@@ -1,6 +1,5 @@
 import { Router } from "express";
-import { prisma } from "../../config/db";
-import { isDbConnectionError } from "../../utils/dbError";
+import { query, queryOne } from "../../config/db";
 
 export const coursesRouter = Router();
 
@@ -8,142 +7,257 @@ function toTitleCase(s: string): string {
   return s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function mapCourseForApi(course: any) {
+interface CourseRow {
+  id: string;
+  title: string;
+  slug: string;
+  category: string;
+  difficulty: string;
+  description: string | null;
+  instructor: string;
+  thumbnail_url: string;
+  total_minutes: number | null;
+  is_published: number;
+}
+interface SectionRow {
+  id: string;
+  course_id: string;
+  title: string;
+  order_index: number;
+}
+interface LessonRow {
+  id: string;
+  section_id: string;
+  title: string;
+  description: string | null;
+  youtube_url: string;
+  order_index: number;
+  duration_minutes: number | null;
+}
+
+function mapCourse(
+  course: CourseRow,
+  sections: SectionRow[],
+  lessonsBySection: Record<string, LessonRow[]>
+) {
   return {
     id: course.id,
     title: course.title,
     slug: course.slug,
     category: toTitleCase(course.category),
     difficulty: toTitleCase(course.difficulty),
-    description: course.description,
+    description: course.description || "",
     instructor: course.instructor,
-    thumbnailUrl: course.thumbnailUrl,
-    totalMinutes: course.totalMinutes ?? undefined,
-    sections: (course.sections || []).map((s: any) => ({
-      id: s.id,
-      title: s.title,
-      order: s.order,
-      lessons: (s.lessons || []).map((l: any) => ({
-        id: l.id,
-        title: l.title,
-        order: l.order,
-        youtubeUrl: l.youtubeUrl,
-        durationMinutes: l.durationMinutes ?? undefined,
+    thumbnailUrl: course.thumbnail_url,
+    totalMinutes: course.total_minutes ?? undefined,
+    sections: sections
+      .sort((a, b) => a.order_index - b.order_index)
+      .map((s) => ({
+        id: s.id,
+        title: s.title,
+        order: s.order_index,
+        lessons: (lessonsBySection[s.id] || [])
+          .sort((a, b) => a.order_index - b.order_index)
+          .map((l) => ({
+            id: l.id,
+            title: l.title,
+            order: l.order_index,
+            youtubeUrl: l.youtube_url,
+            durationMinutes: l.duration_minutes ?? undefined,
+          })),
       })),
-    })),
   };
 }
 
 coursesRouter.get("/", async (_req, res) => {
   try {
-    const courses = await prisma.course.findMany({
-      include: {
-        sections: {
-          orderBy: { order: "asc" },
-          include: {
-            lessons: {
-              orderBy: { order: "asc" },
-            },
-          },
-        },
-      },
-    });
-    const payload = courses.map(mapCourseForApi);
+    const courses = await query<CourseRow[]>(
+      "SELECT * FROM courses WHERE is_published = 1 ORDER BY created_at DESC"
+    );
+    if (!courses || courses.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    const courseIds = courses.map((c) => c.id);
+    const placeholders = courseIds.map(() => "?").join(",");
+    const sections = await query<SectionRow[]>(
+      `SELECT * FROM sections WHERE course_id IN (${placeholders}) ORDER BY course_id, order_index`,
+      courseIds
+    );
+    const sectionIds = sections.map((s) => s.id);
+    const secPlaceholders = sectionIds.map(() => "?").join(",");
+    const lessons = await query<LessonRow[]>(
+      `SELECT * FROM lessons WHERE section_id IN (${secPlaceholders}) ORDER BY section_id, order_index`,
+      sectionIds
+    );
+
+    const lessonsBySection: Record<string, LessonRow[]> = {};
+    for (const l of lessons) {
+      if (!lessonsBySection[l.section_id]) lessonsBySection[l.section_id] = [];
+      lessonsBySection[l.section_id].push(l);
+    }
+
+    const sectionsByCourse: Record<string, SectionRow[]> = {};
+    for (const s of sections) {
+      if (!sectionsByCourse[s.course_id]) sectionsByCourse[s.course_id] = [];
+      sectionsByCourse[s.course_id].push(s);
+    }
+
+    const payload = courses.map((c) =>
+      mapCourse(c, sectionsByCourse[c.id] || [], lessonsBySection)
+    );
     res.status(200).json(payload);
   } catch (err) {
-    const e = err as { code?: string; message?: string };
-    console.error("GET /courses error:", e?.code, e?.message, err);
-    const status = isDbConnectionError(err) ? 503 : 500;
-    const message =
-      status === 503 ? "Database temporarily unavailable" : "Failed to load courses";
-    res.status(status).json({ error: { message } });
+    console.error("GET /courses error:", err);
+    res
+      .status(500)
+      .json({ error: { message: "Failed to load courses" } });
   }
 });
 
 coursesRouter.get("/:courseId", async (req, res) => {
   try {
-    const course = await prisma.course.findUnique({
-      where: { id: req.params.courseId },
-      include: {
-        sections: {
-          orderBy: { order: "asc" },
-          include: {
-            lessons: {
-              orderBy: { order: "asc" },
-            },
-          },
-        },
-      },
-    });
+    const course = await queryOne<CourseRow>(
+      "SELECT * FROM courses WHERE id = ?",
+      [req.params.courseId]
+    );
     if (!course) {
       return res.status(404).json({ error: { message: "Course not found" } });
     }
-    res.status(200).json(mapCourseForApi(course));
+
+    const sections = await query<SectionRow[]>(
+      "SELECT * FROM sections WHERE course_id = ? ORDER BY order_index",
+      [course.id]
+    );
+    const sectionIds = sections.map((s) => s.id);
+    if (sectionIds.length === 0) {
+      return res.status(200).json(mapCourse(course, [], {}));
+    }
+    const placeholders = sectionIds.map(() => "?").join(",");
+    const lessons = await query<LessonRow[]>(
+      `SELECT * FROM lessons WHERE section_id IN (${placeholders}) ORDER BY order_index`,
+      sectionIds
+    );
+    const lessonsBySection: Record<string, LessonRow[]> = {};
+    for (const l of lessons) {
+      if (!lessonsBySection[l.section_id]) lessonsBySection[l.section_id] = [];
+      lessonsBySection[l.section_id].push(l);
+    }
+
+    res.status(200).json(mapCourse(course, sections, lessonsBySection));
   } catch (err) {
     console.error("GET /courses/:courseId error:", err);
-    const status = isDbConnectionError(err) ? 503 : 500;
-    const message =
-      status === 503 ? "Database temporarily unavailable" : "Failed to load course";
-    res.status(status).json({ error: { message } });
+    res
+      .status(500)
+      .json({ error: { message: "Failed to load course" } });
   }
 });
 
 coursesRouter.get("/:courseId/lessons", async (req, res) => {
   try {
-    const course = await prisma.course.findUnique({
-      where: { id: req.params.courseId },
-    });
+    const course = await queryOne<CourseRow>("SELECT * FROM courses WHERE id = ?", [
+      req.params.courseId,
+    ]);
     if (!course) {
       return res.status(404).json({ error: { message: "Course not found" } });
     }
 
-    const sections = await prisma.section.findMany({
-      where: { courseId: course.id },
-      orderBy: { order: "asc" },
-      include: { lessons: { orderBy: { order: "asc" } } },
-    });
+    const sections = await query<SectionRow[]>(
+      "SELECT * FROM sections WHERE course_id = ? ORDER BY order_index",
+      [course.id]
+    );
+    const sectionIds = sections.map((s) => s.id);
+    let lessons: LessonRow[] = [];
+    if (sectionIds.length > 0) {
+      const placeholders = sectionIds.map(() => "?").join(",");
+      lessons = await query<LessonRow[]>(
+        `SELECT * FROM lessons WHERE section_id IN (${placeholders}) ORDER BY order_index`,
+        sectionIds
+      );
+    }
+    const lessonsBySection: Record<string, LessonRow[]> = {};
+    for (const l of lessons) {
+      if (!lessonsBySection[l.section_id]) lessonsBySection[l.section_id] = [];
+      lessonsBySection[l.section_id].push(l);
+    }
 
-    const lessons = sections.flatMap((s: { lessons: any[] }) => s.lessons);
-
-    res.status(200).json({ course: mapCourseForApi(course), lessons });
+    const courseMapped = mapCourse(course, sections, lessonsBySection);
+    const flatLessons = lessons
+      .sort((a, b) => a.order_index - b.order_index)
+      .map((l) => ({
+        id: l.id,
+        title: l.title,
+        order: l.order_index,
+        youtubeUrl: l.youtube_url,
+        durationMinutes: l.duration_minutes ?? undefined,
+      }));
+    res.status(200).json({ course: courseMapped, lessons: flatLessons });
   } catch (err) {
     console.error("GET /courses/:courseId/lessons error:", err);
-    const status = isDbConnectionError(err) ? 503 : 500;
-    const message =
-      status === 503 ? "Database temporarily unavailable" : "Failed to load lessons";
-    res.status(status).json({ error: { message } });
+    res
+      .status(500)
+      .json({ error: { message: "Failed to load lessons" } });
   }
 });
 
 coursesRouter.get("/:courseId/lessons/:lessonId", async (req, res) => {
   try {
-    const course = await prisma.course.findUnique({
-      where: { id: req.params.courseId },
-    });
+    const course = await queryOne<CourseRow>("SELECT * FROM courses WHERE id = ?", [
+      req.params.courseId,
+    ]);
     if (!course) {
       return res.status(404).json({ error: { message: "Course not found" } });
     }
 
-    const sections = await prisma.section.findMany({
-      where: { courseId: course.id },
-      orderBy: { order: "asc" },
-      include: { lessons: { orderBy: { order: "asc" } } },
-    });
-
-    const lessons = sections.flatMap((s: { lessons: any[] }) => s.lessons);
-    const lesson = lessons.find((l: any) => l.id === req.params.lessonId);
-
+    const sections = await query<SectionRow[]>(
+      "SELECT * FROM sections WHERE course_id = ? ORDER BY order_index",
+      [course.id]
+    );
+    const sectionIds = sections.map((s) => s.id);
+    let lessons: LessonRow[] = [];
+    if (sectionIds.length > 0) {
+      const placeholders = sectionIds.map(() => "?").join(",");
+      lessons = await query<LessonRow[]>(
+        `SELECT * FROM lessons WHERE section_id IN (${placeholders}) ORDER BY order_index`,
+        sectionIds
+      );
+    }
+    const lesson = lessons.find((l) => l.id === req.params.lessonId);
     if (!lesson) {
       return res.status(404).json({ error: { message: "Lesson not found" } });
     }
 
-    res.status(200).json({ course: mapCourseForApi(course), lesson, lessons });
+    const lessonsBySection: Record<string, LessonRow[]> = {};
+    for (const l of lessons) {
+      if (!lessonsBySection[l.section_id]) lessonsBySection[l.section_id] = [];
+      lessonsBySection[l.section_id].push(l);
+    }
+
+    const courseMapped = mapCourse(course, sections, lessonsBySection);
+    const flatLessons = lessons
+      .sort((a, b) => a.order_index - b.order_index)
+      .map((l) => ({
+        id: l.id,
+        title: l.title,
+        order: l.order_index,
+        youtubeUrl: l.youtube_url,
+        durationMinutes: l.duration_minutes ?? undefined,
+      }));
+    res.status(200).json({
+      course: courseMapped,
+      lesson: {
+        id: lesson.id,
+        title: lesson.title,
+        order: lesson.order_index,
+        youtubeUrl: lesson.youtube_url,
+        durationMinutes: lesson.duration_minutes ?? undefined,
+      },
+      lessons: flatLessons,
+    });
   } catch (err) {
     console.error("GET /courses/:courseId/lessons/:lessonId error:", err);
-    const status = isDbConnectionError(err) ? 503 : 500;
-    const message =
-      status === 503 ? "Database temporarily unavailable" : "Failed to load lesson";
-    res.status(status).json({ error: { message } });
+    res
+      .status(500)
+      .json({ error: { message: "Failed to load lesson" } });
   }
 });
-
