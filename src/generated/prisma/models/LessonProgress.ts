@@ -570,10 +570,6 @@ export type LessonProgressUncheckedUpdateManyWithoutLessonNestedInput = {
   deleteMany?: Prisma.LessonProgressScalarWhereInput | Prisma.LessonProgressScalarWhereInput[]
 }
 
-export type BoolFieldUpdateOperationsInput = {
-  set?: boolean
-}
-
 export type LessonProgressCreateWithoutUserInput = {
   id?: string
   lastPositionSeconds?: number

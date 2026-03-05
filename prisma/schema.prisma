@@ -43,17 +43,18 @@ enum UserStatus {
 }
 
 model Course {
-  id           String    @id @default(cuid())
-  title        String
-  slug         String    @unique
-  category     CourseCategory
-  difficulty   CourseDifficulty
-  description  String
-  instructor   String
-  thumbnailUrl String
+  id            String    @id @default(cuid())
+  title         String
+  slug          String    @unique
+  category      CourseCategory
+  difficulty    CourseDifficulty
+  description   String
+  instructor    String
+  thumbnailUrl  String
   totalMinutes Int?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  isPublished   Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   sections     Section[]
   lessonProgresses LessonProgress[]

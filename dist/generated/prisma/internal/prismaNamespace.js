@@ -144,6 +144,7 @@ exports.CourseScalarFieldEnum = {
     instructor: 'instructor',
     thumbnailUrl: 'thumbnailUrl',
     totalMinutes: 'totalMinutes',
+    isPublished: 'isPublished',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
 };

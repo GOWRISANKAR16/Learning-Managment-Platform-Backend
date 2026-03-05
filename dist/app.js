@@ -17,6 +17,7 @@ const messages_routes_1 = require("./modules/messages/messages.routes");
 const assignments_routes_1 = require("./modules/assignments/assignments.routes");
 const admin_courses_routes_1 = require("./modules/admin/admin.courses.routes");
 const admin_users_routes_1 = require("./modules/admin/admin.users.routes");
+const api_routes_1 = require("./modules/api/api.routes");
 exports.app = (0, express_1.default)();
 exports.app.use(express_1.default.json());
 exports.app.use((0, cookie_parser_1.default)());
@@ -43,6 +44,7 @@ exports.app.use("/", assignments_routes_1.assignmentsRouter);
 exports.app.use("/admin/courses", admin_courses_routes_1.adminCoursesRouter);
 exports.app.use("/admin/users", admin_users_routes_1.adminUsersRouter);
 exports.app.use("/admin/assignments", assignments_routes_1.adminAssignmentsRouter);
+exports.app.use("/api", api_routes_1.apiRouter);
 exports.app.use((_req, res) => {
     res.status(404).json({ error: { message: "Not found" } });
 });

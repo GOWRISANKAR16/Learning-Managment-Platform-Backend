@@ -51,7 +51,8 @@ coursesRouter.get("/", async (_req, res) => {
     const payload = courses.map(mapCourseForApi);
     res.status(200).json(payload);
   } catch (err) {
-    console.error("GET /courses error:", err);
+    const e = err as { code?: string; message?: string };
+    console.error("GET /courses error:", e?.code, e?.message, err);
     const status = isDbConnectionError(err) ? 503 : 500;
     const message =
       status === 503 ? "Database temporarily unavailable" : "Failed to load courses";

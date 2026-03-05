@@ -44,6 +44,7 @@ export type CourseMinAggregateOutputType = {
   instructor: string | null
   thumbnailUrl: string | null
   totalMinutes: number | null
+  isPublished: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -58,6 +59,7 @@ export type CourseMaxAggregateOutputType = {
   instructor: string | null
   thumbnailUrl: string | null
   totalMinutes: number | null
+  isPublished: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -72,6 +74,7 @@ export type CourseCountAggregateOutputType = {
   instructor: number
   thumbnailUrl: number
   totalMinutes: number
+  isPublished: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -96,6 +99,7 @@ export type CourseMinAggregateInputType = {
   instructor?: true
   thumbnailUrl?: true
   totalMinutes?: true
+  isPublished?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -110,6 +114,7 @@ export type CourseMaxAggregateInputType = {
   instructor?: true
   thumbnailUrl?: true
   totalMinutes?: true
+  isPublished?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -124,6 +129,7 @@ export type CourseCountAggregateInputType = {
   instructor?: true
   thumbnailUrl?: true
   totalMinutes?: true
+  isPublished?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -225,6 +231,7 @@ export type CourseGroupByOutputType = {
   instructor: string
   thumbnailUrl: string
   totalMinutes: number | null
+  isPublished: boolean
   createdAt: Date
   updatedAt: Date
   _count: CourseCountAggregateOutputType | null
@@ -262,6 +269,7 @@ export type CourseWhereInput = {
   instructor?: Prisma.StringFilter<"Course"> | string
   thumbnailUrl?: Prisma.StringFilter<"Course"> | string
   totalMinutes?: Prisma.IntNullableFilter<"Course"> | number | null
+  isPublished?: Prisma.BoolFilter<"Course"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Course"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Course"> | Date | string
   sections?: Prisma.SectionListRelationFilter
@@ -281,6 +289,7 @@ export type CourseOrderByWithRelationInput = {
   instructor?: Prisma.SortOrder
   thumbnailUrl?: Prisma.SortOrder
   totalMinutes?: Prisma.SortOrderInput | Prisma.SortOrder
+  isPublished?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   sections?: Prisma.SectionOrderByRelationAggregateInput
@@ -304,6 +313,7 @@ export type CourseWhereUniqueInput = Prisma.AtLeast<{
   instructor?: Prisma.StringFilter<"Course"> | string
   thumbnailUrl?: Prisma.StringFilter<"Course"> | string
   totalMinutes?: Prisma.IntNullableFilter<"Course"> | number | null
+  isPublished?: Prisma.BoolFilter<"Course"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Course"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Course"> | Date | string
   sections?: Prisma.SectionListRelationFilter
@@ -323,6 +333,7 @@ export type CourseOrderByWithAggregationInput = {
   instructor?: Prisma.SortOrder
   thumbnailUrl?: Prisma.SortOrder
   totalMinutes?: Prisma.SortOrderInput | Prisma.SortOrder
+  isPublished?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.CourseCountOrderByAggregateInput
@@ -345,6 +356,7 @@ export type CourseScalarWhereWithAggregatesInput = {
   instructor?: Prisma.StringWithAggregatesFilter<"Course"> | string
   thumbnailUrl?: Prisma.StringWithAggregatesFilter<"Course"> | string
   totalMinutes?: Prisma.IntNullableWithAggregatesFilter<"Course"> | number | null
+  isPublished?: Prisma.BoolWithAggregatesFilter<"Course"> | boolean
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Course"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Course"> | Date | string
 }
@@ -359,6 +371,7 @@ export type CourseCreateInput = {
   instructor: string
   thumbnailUrl: string
   totalMinutes?: number | null
+  isPublished?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   sections?: Prisma.SectionCreateNestedManyWithoutCourseInput
@@ -378,6 +391,7 @@ export type CourseUncheckedCreateInput = {
   instructor: string
   thumbnailUrl: string
   totalMinutes?: number | null
+  isPublished?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   sections?: Prisma.SectionUncheckedCreateNestedManyWithoutCourseInput
@@ -397,6 +411,7 @@ export type CourseUpdateInput = {
   instructor?: Prisma.StringFieldUpdateOperationsInput | string
   thumbnailUrl?: Prisma.StringFieldUpdateOperationsInput | string
   totalMinutes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sections?: Prisma.SectionUpdateManyWithoutCourseNestedInput
@@ -416,6 +431,7 @@ export type CourseUncheckedUpdateInput = {
   instructor?: Prisma.StringFieldUpdateOperationsInput | string
   thumbnailUrl?: Prisma.StringFieldUpdateOperationsInput | string
   totalMinutes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sections?: Prisma.SectionUncheckedUpdateManyWithoutCourseNestedInput
@@ -435,6 +451,7 @@ export type CourseCreateManyInput = {
   instructor: string
   thumbnailUrl: string
   totalMinutes?: number | null
+  isPublished?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -449,6 +466,7 @@ export type CourseUpdateManyMutationInput = {
   instructor?: Prisma.StringFieldUpdateOperationsInput | string
   thumbnailUrl?: Prisma.StringFieldUpdateOperationsInput | string
   totalMinutes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -463,6 +481,7 @@ export type CourseUncheckedUpdateManyInput = {
   instructor?: Prisma.StringFieldUpdateOperationsInput | string
   thumbnailUrl?: Prisma.StringFieldUpdateOperationsInput | string
   totalMinutes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -483,6 +502,7 @@ export type CourseCountOrderByAggregateInput = {
   instructor?: Prisma.SortOrder
   thumbnailUrl?: Prisma.SortOrder
   totalMinutes?: Prisma.SortOrder
+  isPublished?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -501,6 +521,7 @@ export type CourseMaxOrderByAggregateInput = {
   instructor?: Prisma.SortOrder
   thumbnailUrl?: Prisma.SortOrder
   totalMinutes?: Prisma.SortOrder
+  isPublished?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -515,6 +536,7 @@ export type CourseMinOrderByAggregateInput = {
   instructor?: Prisma.SortOrder
   thumbnailUrl?: Prisma.SortOrder
   totalMinutes?: Prisma.SortOrder
+  isPublished?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -542,6 +564,10 @@ export type NullableIntFieldUpdateOperationsInput = {
   decrement?: number
   multiply?: number
   divide?: number
+}
+
+export type BoolFieldUpdateOperationsInput = {
+  set?: boolean
 }
 
 export type CourseCreateNestedOneWithoutSectionsInput = {
@@ -624,6 +650,7 @@ export type CourseCreateWithoutSectionsInput = {
   instructor: string
   thumbnailUrl: string
   totalMinutes?: number | null
+  isPublished?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   lessonProgresses?: Prisma.LessonProgressCreateNestedManyWithoutCourseInput
@@ -642,6 +669,7 @@ export type CourseUncheckedCreateWithoutSectionsInput = {
   instructor: string
   thumbnailUrl: string
   totalMinutes?: number | null
+  isPublished?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   lessonProgresses?: Prisma.LessonProgressUncheckedCreateNestedManyWithoutCourseInput
@@ -676,6 +704,7 @@ export type CourseUpdateWithoutSectionsInput = {
   instructor?: Prisma.StringFieldUpdateOperationsInput | string
   thumbnailUrl?: Prisma.StringFieldUpdateOperationsInput | string
   totalMinutes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lessonProgresses?: Prisma.LessonProgressUpdateManyWithoutCourseNestedInput
@@ -694,6 +723,7 @@ export type CourseUncheckedUpdateWithoutSectionsInput = {
   instructor?: Prisma.StringFieldUpdateOperationsInput | string
   thumbnailUrl?: Prisma.StringFieldUpdateOperationsInput | string
   totalMinutes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lessonProgresses?: Prisma.LessonProgressUncheckedUpdateManyWithoutCourseNestedInput
@@ -712,6 +742,7 @@ export type CourseCreateWithoutLessonProgressesInput = {
   instructor: string
   thumbnailUrl: string
   totalMinutes?: number | null
+  isPublished?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   sections?: Prisma.SectionCreateNestedManyWithoutCourseInput
@@ -730,6 +761,7 @@ export type CourseUncheckedCreateWithoutLessonProgressesInput = {
   instructor: string
   thumbnailUrl: string
   totalMinutes?: number | null
+  isPublished?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   sections?: Prisma.SectionUncheckedCreateNestedManyWithoutCourseInput
@@ -764,6 +796,7 @@ export type CourseUpdateWithoutLessonProgressesInput = {
   instructor?: Prisma.StringFieldUpdateOperationsInput | string
   thumbnailUrl?: Prisma.StringFieldUpdateOperationsInput | string
   totalMinutes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sections?: Prisma.SectionUpdateManyWithoutCourseNestedInput
@@ -782,6 +815,7 @@ export type CourseUncheckedUpdateWithoutLessonProgressesInput = {
   instructor?: Prisma.StringFieldUpdateOperationsInput | string
   thumbnailUrl?: Prisma.StringFieldUpdateOperationsInput | string
   totalMinutes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sections?: Prisma.SectionUncheckedUpdateManyWithoutCourseNestedInput
@@ -800,6 +834,7 @@ export type CourseCreateWithoutThreadsInput = {
   instructor: string
   thumbnailUrl: string
   totalMinutes?: number | null
+  isPublished?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   sections?: Prisma.SectionCreateNestedManyWithoutCourseInput
@@ -818,6 +853,7 @@ export type CourseUncheckedCreateWithoutThreadsInput = {
   instructor: string
   thumbnailUrl: string
   totalMinutes?: number | null
+  isPublished?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   sections?: Prisma.SectionUncheckedCreateNestedManyWithoutCourseInput
@@ -852,6 +888,7 @@ export type CourseUpdateWithoutThreadsInput = {
   instructor?: Prisma.StringFieldUpdateOperationsInput | string
   thumbnailUrl?: Prisma.StringFieldUpdateOperationsInput | string
   totalMinutes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sections?: Prisma.SectionUpdateManyWithoutCourseNestedInput
@@ -870,6 +907,7 @@ export type CourseUncheckedUpdateWithoutThreadsInput = {
   instructor?: Prisma.StringFieldUpdateOperationsInput | string
   thumbnailUrl?: Prisma.StringFieldUpdateOperationsInput | string
   totalMinutes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sections?: Prisma.SectionUncheckedUpdateManyWithoutCourseNestedInput
@@ -888,6 +926,7 @@ export type CourseCreateWithoutAssignmentsInput = {
   instructor: string
   thumbnailUrl: string
   totalMinutes?: number | null
+  isPublished?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   sections?: Prisma.SectionCreateNestedManyWithoutCourseInput
@@ -906,6 +945,7 @@ export type CourseUncheckedCreateWithoutAssignmentsInput = {
   instructor: string
   thumbnailUrl: string
   totalMinutes?: number | null
+  isPublished?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   sections?: Prisma.SectionUncheckedCreateNestedManyWithoutCourseInput
@@ -940,6 +980,7 @@ export type CourseUpdateWithoutAssignmentsInput = {
   instructor?: Prisma.StringFieldUpdateOperationsInput | string
   thumbnailUrl?: Prisma.StringFieldUpdateOperationsInput | string
   totalMinutes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sections?: Prisma.SectionUpdateManyWithoutCourseNestedInput
@@ -958,6 +999,7 @@ export type CourseUncheckedUpdateWithoutAssignmentsInput = {
   instructor?: Prisma.StringFieldUpdateOperationsInput | string
   thumbnailUrl?: Prisma.StringFieldUpdateOperationsInput | string
   totalMinutes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sections?: Prisma.SectionUncheckedUpdateManyWithoutCourseNestedInput
@@ -976,6 +1018,7 @@ export type CourseCreateWithoutEnrollmentsInput = {
   instructor: string
   thumbnailUrl: string
   totalMinutes?: number | null
+  isPublished?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   sections?: Prisma.SectionCreateNestedManyWithoutCourseInput
@@ -994,6 +1037,7 @@ export type CourseUncheckedCreateWithoutEnrollmentsInput = {
   instructor: string
   thumbnailUrl: string
   totalMinutes?: number | null
+  isPublished?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   sections?: Prisma.SectionUncheckedCreateNestedManyWithoutCourseInput
@@ -1028,6 +1072,7 @@ export type CourseUpdateWithoutEnrollmentsInput = {
   instructor?: Prisma.StringFieldUpdateOperationsInput | string
   thumbnailUrl?: Prisma.StringFieldUpdateOperationsInput | string
   totalMinutes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sections?: Prisma.SectionUpdateManyWithoutCourseNestedInput
@@ -1046,6 +1091,7 @@ export type CourseUncheckedUpdateWithoutEnrollmentsInput = {
   instructor?: Prisma.StringFieldUpdateOperationsInput | string
   thumbnailUrl?: Prisma.StringFieldUpdateOperationsInput | string
   totalMinutes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sections?: Prisma.SectionUncheckedUpdateManyWithoutCourseNestedInput
@@ -1131,6 +1177,7 @@ export type CourseSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   instructor?: boolean
   thumbnailUrl?: boolean
   totalMinutes?: boolean
+  isPublished?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   sections?: boolean | Prisma.Course$sectionsArgs<ExtArgs>
@@ -1153,11 +1200,12 @@ export type CourseSelectScalar = {
   instructor?: boolean
   thumbnailUrl?: boolean
   totalMinutes?: boolean
+  isPublished?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type CourseOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "slug" | "category" | "difficulty" | "description" | "instructor" | "thumbnailUrl" | "totalMinutes" | "createdAt" | "updatedAt", ExtArgs["result"]["course"]>
+export type CourseOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "slug" | "category" | "difficulty" | "description" | "instructor" | "thumbnailUrl" | "totalMinutes" | "isPublished" | "createdAt" | "updatedAt", ExtArgs["result"]["course"]>
 export type CourseInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   sections?: boolean | Prisma.Course$sectionsArgs<ExtArgs>
   lessonProgresses?: boolean | Prisma.Course$lessonProgressesArgs<ExtArgs>
@@ -1186,6 +1234,7 @@ export type $CoursePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     instructor: string
     thumbnailUrl: string
     totalMinutes: number | null
+    isPublished: boolean
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["course"]>
@@ -1571,6 +1620,7 @@ export interface CourseFieldRefs {
   readonly instructor: Prisma.FieldRef<"Course", 'String'>
   readonly thumbnailUrl: Prisma.FieldRef<"Course", 'String'>
   readonly totalMinutes: Prisma.FieldRef<"Course", 'Int'>
+  readonly isPublished: Prisma.FieldRef<"Course", 'Boolean'>
   readonly createdAt: Prisma.FieldRef<"Course", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Course", 'DateTime'>
 }

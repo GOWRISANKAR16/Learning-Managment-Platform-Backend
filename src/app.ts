@@ -15,6 +15,8 @@ import {
 import { adminCoursesRouter } from "./modules/admin/admin.courses.routes";
 import { adminUsersRouter } from "./modules/admin/admin.users.routes";
 
+import { apiRouter } from "./modules/api/api.routes";
+
 export const app = express();
 
 app.use(express.json());
@@ -48,6 +50,8 @@ app.use("/", assignmentsRouter);
 app.use("/admin/courses", adminCoursesRouter);
 app.use("/admin/users", adminUsersRouter);
 app.use("/admin/assignments", adminAssignmentsRouter);
+
+app.use("/api", apiRouter);
 
 app.use((_req, res) => {
   res.status(404).json({ error: { message: "Not found" } });
