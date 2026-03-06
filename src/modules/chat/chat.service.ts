@@ -1,30 +1,33 @@
 import { env } from "../../config/env";
 
 const POLL_INTERVAL_MS = 1500;
-const MAX_POLL_ATTEMPTS = 60;
+const POLL_ATTEMPTS = 60; // ~90s total
 
 export class UpstreamError extends Error {
   code = "UPSTREAM_ERROR" as const;
 }
 
 /**
- * Call Hugging Face Space /call/predict: POST with message → get event_id → poll
- * GET /call/predict/<event_id> until SSE data line has the reply. Keeps HF token on server.
+ * Call Hugging Face Space /call/predict: POST with message → get event_id → poll GET until done → parse SSE data for reply.
+ * Keeps HF token on server; frontend calls this backend instead of HF directly.
  */
-export async function getReply(userMessage: string): Promise<string> {
+export async function getReply(message: string): Promise<string> {
   const base = env.huggingFaceSpaceUrl.replace(/\/$/, "");
-  const token = env.hfToken;
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (env.hfToken) {
+    headers["Authorization"] = `Bearer ${env.hfToken}`;
+  }
 
   const postRes = await fetch(`${base}/call/predict`, {
     method: "POST",
     headers,
-    body: JSON.stringify({ data: [userMessage] }),
+    body: JSON.stringify({ data: [message] }),
   });
 
   if (!postRes.ok) {
-    throw new UpstreamError(`HF Space returned ${postRes.status}`);
+    throw new UpstreamError("AI service returned an error");
   }
 
   const postData = (await postRes.json()) as { event_id?: string };
@@ -34,9 +37,11 @@ export async function getReply(userMessage: string): Promise<string> {
   }
 
   const getHeaders: Record<string, string> = {};
-  if (token) getHeaders["Authorization"] = `Bearer ${token}`;
+  if (env.hfToken) {
+    getHeaders["Authorization"] = `Bearer ${env.hfToken}`;
+  }
 
-  for (let i = 0; i < MAX_POLL_ATTEMPTS; i++) {
+  for (let i = 0; i < POLL_ATTEMPTS; i++) {
     await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
 
     const getRes = await fetch(`${base}/call/predict/${eventId}`, {
@@ -45,19 +50,41 @@ export async function getReply(userMessage: string): Promise<string> {
     if (!getRes.ok) continue;
 
     const text = await getRes.text();
+
+    // Try SSE-style line: data: [...]
     const dataMatch = text.match(/^data:\s*(\[.*\])\s*$/m);
     if (dataMatch) {
       try {
         const arr = JSON.parse(dataMatch[1]) as unknown;
-        const list = Array.isArray(arr) ? arr : [arr];
-        const last = list[list.length - 1];
+        const last = Array.isArray(arr) ? arr[arr.length - 1] : arr;
         if (typeof last === "string") return last;
         if (last && typeof last === "object" && "content" in last && typeof (last as { content: unknown }).content === "string") {
           return (last as { content: string }).content;
         }
       } catch {
-        // ignore parse errors, keep polling
+        // ignore parse error, keep polling
       }
+    }
+
+    // Try JSON body (some Spaces return JSON when complete)
+    try {
+      const json = JSON.parse(text) as unknown;
+      if (json && typeof json === "object") {
+        const data = (json as { data?: unknown[] }).data;
+        if (Array.isArray(data) && data.length > 0) {
+          const first = data[0];
+          if (typeof first === "string") return first;
+          if (first && typeof first === "object" && "content" in first) {
+            return String((first as { content: unknown }).content);
+          }
+        }
+        const content = (json as { content?: string }).content;
+        if (typeof content === "string") return content;
+        const reply = (json as { reply?: string }).reply;
+        if (typeof reply === "string") return reply;
+      }
+    } catch {
+      // not JSON, keep polling
     }
   }
 

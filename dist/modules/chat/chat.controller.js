@@ -31,15 +31,6 @@ async function chatHandler(req, res) {
                 error: { message: "AI service temporarily unavailable" },
             });
         }
-        const err = e;
-        if (err?.code === "UPSTREAM_ERROR" || err?.message?.includes("timeout")) {
-            return res.status(502).json({
-                error: { message: "AI service temporarily unavailable" },
-            });
-        }
-        console.error("Chat error", e);
-        return res.status(500).json({
-            error: { message: "Something went wrong. Please try again." },
-        });
+        throw e;
     }
 }

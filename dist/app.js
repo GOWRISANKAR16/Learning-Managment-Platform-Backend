@@ -54,7 +54,6 @@ exports.app.get("/health", (_req, res) => {
 exports.app.use("/auth", auth_routes_1.authRouter);
 exports.app.use("/courses", courses_routes_1.coursesRouter);
 exports.app.use("/", chat_routes_1.chatRouter);
-exports.app.use("/api", chat_routes_1.chatRouter);
 exports.app.use("/", progress_routes_1.progressRouter);
 exports.app.use((_req, res) => {
     res.status(404).json({ error: { message: "Not found" } });

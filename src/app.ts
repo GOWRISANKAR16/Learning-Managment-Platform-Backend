@@ -54,7 +54,6 @@ app.get("/health", (_req, res) => {
 app.use("/auth", authRouter);
 app.use("/courses", coursesRouter);
 app.use("/", chatRouter);
-app.use("/api", chatRouter);
 app.use("/", progressRouter);
 
 app.use((_req, res) => {

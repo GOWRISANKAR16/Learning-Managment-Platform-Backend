@@ -10,10 +10,10 @@ The Learning Studio frontend calls **POST /chat** on your API for the in-app AI 
 - **Headers:** `Content-Type: application/json`, `Authorization: Bearer <access_token>` (same JWT as `/courses/:id/lessons`, etc.).
 - **Body:** `{ "message": "<user text>", "history": [ { "role": "user"|"assistant", "content": "..." }, ... ] }`
 - Expects **200** with JSON that has a string reply in one of these keys (first found wins):  
-  `reply`, `content`, `message`, `response`, `text`, `result`, `output`  
-  or inside `data.reply`, `data.content`, etc.
-- On **401:** show "Unauthorized" / session expired.
-- On **400/502/503/500:** show `error.message` or `message` from your JSON (frontend shows it in the chat).
+  **reply**, **content**, **message**, **response**, **text**, **result**, **output**  
+  or inside **data.reply**, **data.content**, etc.
+- On **401:** show “Unauthorized” / session expired.
+- On **400/502/503/500:** show **error.message** or **message** from your JSON (frontend shows it in the chat).
 
 Your backend must: Implement **POST /chat** at the same base URL as your other routes (e.g. `https://learning-managment-platform-backend.onrender.com/chat`), with same JWT auth as other protected routes.
 
@@ -23,15 +23,15 @@ Your backend must: Implement **POST /chat** at the same base URL as your other r
 
 **Request:**
 
-- **Method:** POST
-- **Path:** `/chat` (or `/api/chat` if you mount under `/api`).
-- **Headers:** `Content-Type: application/json`, `Authorization: Bearer <access_token>` (required).
+- **Method:** POST  
+- **Path:** `/chat` (or `/api/chat` if you mount under `/api`).  
+- **Headers:** `Content-Type: application/json`, `Authorization: Bearer <access_token>` (required).  
 - **Body (JSON):**
   ```json
   { "message": "What is React?", "history": [ { "role": "user", "content": "Hi" }, { "role": "assistant", "content": "Hello!" } ] }
   ```
-  - `message` (string, required).
-  - `history` (array, optional).
+  - **message** (string, required).  
+  - **history** (array, optional).
 
 **Success (200):**
 
@@ -60,16 +60,12 @@ or
 
 1. **POST** `https://gowrisankara-qwen-qwen2-5-coder-32b-instruct.hf.space/call/predict`  
    **Body:** `{ "data": [ "<user message>" ] }`  
-   → get `event_id` from response.
-
+   → get **event_id** from response.
 2. **GET** `https://gowrisankara-qwen-qwen2-5-coder-32b-instruct.hf.space/call/predict/<event_id>`  
-   → poll until done; parse SSE data: line; extract reply string.
-
+   → poll until done; parse SSE data line; extract reply string.
 3. Return **200** with `{ "reply": "<parsed text>" }`.
-
 4. On Space 500 or timeout → **502** with `{ "error": { "message": "AI service temporarily unavailable" } }`.
-
-5. Optional: use `HF_TOKEN` in env and send `Authorization: Bearer <HF_TOKEN>` to the Space.
+5. Optional: use **HF_TOKEN** in env and send `Authorization: Bearer <HF_TOKEN>` to the Space.
 
 ### Option B – Other AI API
 
@@ -133,7 +129,7 @@ async function getReplyFromHuggingFace(userMessage) {
 
 ## 5. CORS and URL
 
-- **CORS:** Allow frontend origin (e.g. `http://localhost:5173`, production URL) with `credentials: true`.
+- **CORS:** Allow frontend origin (e.g. `http://localhost:5173`, production URL) with **credentials: true**.
 - **URL:** Register **POST /chat** on the same app as `/auth` and `/courses` (e.g. `https://learning-managment-platform-backend.onrender.com/chat`).
 
 ---
@@ -147,7 +143,7 @@ curl -X POST https://learning-managment-platform-backend.onrender.com/chat \
   -d '{"message":"Hello","history":[]}'
 ```
 
-Expected: **200** and body like `{"reply":"Hello! How can I help?"}`.
+**Expected:** 200 and body like `{"reply":"Hello! How can I help?"}`.
 
 ---
 
