@@ -7,6 +7,8 @@ export const env = {
   corsOrigin: process.env.CORS_ORIGIN || "http://localhost:5173",
   /** Comma-separated list of origins, or single origin */
   corsOrigins: (process.env.CORS_ORIGIN || "http://localhost:5173").split(",").map((o) => o.trim()).filter(Boolean),
+  /** Optional comma-separated glob patterns (e.g. https://*.vercel.app) to allow dynamic preview URLs */
+  corsOriginPatterns: (process.env.CORS_ORIGIN_PATTERNS || "").split(",").map((p) => p.trim()).filter(Boolean),
   jwtAccessSecret: process.env.JWT_ACCESS_SECRET || "dev-access-secret",
   jwtRefreshSecret: process.env.JWT_REFRESH_SECRET || "dev-refresh-secret",
   cookieDomain: process.env.COOKIE_DOMAIN || undefined,

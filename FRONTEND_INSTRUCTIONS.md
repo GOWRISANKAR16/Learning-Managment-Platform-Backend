@@ -9,6 +9,10 @@ Use this document to wire your React frontend to the **current** backend (MySQL,
 - In your frontend project set:
   - **Dev:** `VITE_API_BASE_URL=http://localhost:4000`
   - **Production:** `VITE_API_BASE_URL=https://learning-managment-platform-backend.onrender.com` (or your backend URL)
+- **No trailing slash** – use `https://learning-managment-platform-backend.onrender.com`, not `https://...com/`. A trailing slash plus paths like `/auth/login` produces `//auth/login` and the backend returns 404.
+- When building the request URL, normalize the base so a trailing slash never causes a double slash:  
+  `const base = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');`  
+  then use `\`${base}/auth/login\`` etc.
 - **Do not add `/api`** – all paths are under the root:
   - Auth: `/auth/register`, `/auth/login`, `/auth/logout`, `/auth/me`, `/auth/refresh`
   - Courses: `/courses`, `/courses/:courseId`, `/courses/:courseId/lessons`, `/courses/:courseId/lessons/:lessonId`
@@ -140,7 +144,7 @@ All progress endpoints require **auth**: header `Authorization: Bearer <token>`.
 
 | Item | What to do |
 |------|------------|
-| **Base URL** | Use `VITE_API_BASE_URL` for all requests. **No `/api`** in the path. |
+| **Base URL** | Use `VITE_API_BASE_URL` for all requests. **No `/api`** in the path. **No trailing slash** on the base (or normalize before concatenating) to avoid `//auth/login` and 404. |
 | **Auth** | After login/register, store `response.token` and `response.user`. Send `Authorization: Bearer <token>` on every protected request. |
 | **Credentials** | Use `credentials: 'include'` (fetch) or `withCredentials: true` (axios) so the refresh cookie is sent. |
 | **Refresh** | On 401, call POST `/auth/refresh` with credentials; if 200, update token and retry; if 401, clear auth and go to login. |
@@ -161,7 +165,7 @@ Backend allows origins from **`CORS_ORIGIN`** (comma-separated for multiple). On
 
 ## 7. Checklist
 
-- [ ] `VITE_API_BASE_URL` set; all API URLs use it **without** `/api`.
+- [ ] `VITE_API_BASE_URL` set **without trailing slash**; all API URLs use it **without** `/api`.
 - [ ] Login/register: send body, store `token` + `user`, use credentials.
 - [ ] All authenticated requests: `Authorization: Bearer <token>` and credentials.
 - [ ] On 401: call POST `/auth/refresh` with credentials; update token or redirect to login.
