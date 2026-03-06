@@ -5,6 +5,7 @@ import { env } from "./config/env";
 import { requestLogger } from "./middleware/requestLogger";
 import { errorHandler } from "./middleware/errorHandler";
 import { authRouter } from "./modules/auth/auth.routes";
+import { chatRouter } from "./modules/chat/chat.routes";
 import { coursesRouter } from "./modules/courses/courses.routes";
 import { progressRouter } from "./modules/progress/progress.routes";
 
@@ -52,6 +53,7 @@ app.get("/health", (_req, res) => {
 
 app.use("/auth", authRouter);
 app.use("/courses", coursesRouter);
+app.use("/", chatRouter);
 app.use("/", progressRouter);
 
 app.use((_req, res) => {

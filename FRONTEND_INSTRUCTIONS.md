@@ -17,6 +17,7 @@ Use this document to wire your React frontend to the **current** backend (MySQL,
   - Auth: `/auth/register`, `/auth/login`, `/auth/logout`, `/auth/me`, `/auth/refresh`
   - Courses: `/courses`, `/courses/:courseId`, `/courses/:courseId/lessons`, `/courses/:courseId/lessons/:lessonId`
   - Progress: `/users/:userId/progress`, `/users/:userId/progress/:courseId`, `/courses/:courseId/progress-summary`
+  - Chat (AI): **POST** `/chat`
 
 **Example:**  
 `fetch(\`${import.meta.env.VITE_API_BASE_URL}/auth/login\`, { ... })`
@@ -140,7 +141,24 @@ All progress endpoints require **auth**: header `Authorization: Bearer <token>`.
 
 ---
 
-## 5. What you must change in the frontend
+## 5. Chat (AI) – requests and responses
+
+**POST** `{API_BASE_URL}/chat` – **auth required** (`Authorization: Bearer <token>`).
+
+- **Body:** `{ "message": string, "history"?: array }`  
+  - `message` (required): user’s latest message.  
+  - `history` (optional): previous turns `[{ "role": "user" | "assistant", "content": "..." }]`; backend may ignore it.
+- **Success (200):** `{ "reply": "..." }` or `{ "content": "..." }` (frontend can accept either).
+- **Error (401):** `{ "error": { "message": "Unauthorized" } }`
+- **Error (400):** `{ "error": { "message": "Message is required" } }` (or validation message).
+- **Error (502/503):** `{ "error": { "message": "AI service temporarily unavailable" } }`
+- **Error (500):** `{ "error": { "message": "Something went wrong. Please try again." } }`
+
+**Frontend:** Call this instead of Hugging Face directly to avoid CORS and keep the HF token on the server. On 502/503/500 or network error, show “AI temporarily unavailable” or fall back to direct HF if you must.
+
+---
+
+## 6. What you must change in the frontend
 
 | Item | What to do |
 |------|------------|
@@ -154,7 +172,7 @@ All progress endpoints require **auth**: header `Authorization: Bearer <token>`.
 
 ---
 
-## 6. Backend CORS
+## 7. Backend CORS
 
 Backend allows origins from **`CORS_ORIGIN`** (comma-separated for multiple). On Render (or your host) set:
 
@@ -163,7 +181,7 @@ Backend allows origins from **`CORS_ORIGIN`** (comma-separated for multiple). On
 
 ---
 
-## 7. Checklist
+## 8. Checklist
 
 - [ ] `VITE_API_BASE_URL` set **without trailing slash**; all API URLs use it **without** `/api`.
 - [ ] Login/register: send body, store `token` + `user`, use credentials.
@@ -172,11 +190,12 @@ Backend allows origins from **`CORS_ORIGIN`** (comma-separated for multiple). On
 - [ ] Logout: POST `/auth/logout` with credentials, then clear local state.
 - [ ] Course list: GET `/courses` (response is array).
 - [ ] Progress: POST `/users/:userId/progress`, GET `/users/:userId/progress/:courseId`, GET `/courses/:courseId/progress-summary`.
+- [ ] Chat: POST `/chat` with `{ "message", "history?" }`; handle `reply` or `content`; show friendly message on 502/503.
 - [ ] User-facing errors: generic message only; log real errors in dev.
 
 ---
 
-## 8. Not available in current backend
+## 9. Not available in current backend
 
 - **Admin** routes (`/admin/courses`, `/admin/users`, `/admin/assignments`) – removed.
 - **Messages** (threads, messages) – removed.

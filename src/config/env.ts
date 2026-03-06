@@ -12,5 +12,15 @@ export const env = {
   jwtAccessSecret: process.env.JWT_ACCESS_SECRET || "dev-access-secret",
   jwtRefreshSecret: process.env.JWT_REFRESH_SECRET || "dev-refresh-secret",
   cookieDomain: process.env.COOKIE_DOMAIN || undefined,
+  /** Hugging Face Space URL for chat proxy (no trailing slash) */
+  huggingFaceSpaceUrl:
+    process.env.HF_SPACE_URL ||
+    "https://gowrisankara-qwen-qwen2-5-coder-32b-instruct.hf.space",
+  /** Hugging Face token for gated Spaces (optional) */
+  hfToken: process.env.HF_TOKEN || process.env.HUGGINGFACE_TOKEN || undefined,
+  /** Max length for chat message (default 4000) */
+  chatMaxMessageLength: process.env.CHAT_MAX_MESSAGE_LENGTH
+    ? Number(process.env.CHAT_MAX_MESSAGE_LENGTH)
+    : 4000,
 };
 
