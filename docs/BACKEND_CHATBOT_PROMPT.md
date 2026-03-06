@@ -1,126 +1,164 @@
-# Backend Chatbot API – Implementation Prompt
+# Backend: Add POST /chat for AI Assistant (copy this to your backend team)
 
-Give this to the backend team so they can implement the AI chatbot and the Learning Studio frontend can call your API instead of Hugging Face directly. That avoids CORS, 500s, and keeps the Hugging Face token on the server.
+The Learning Studio frontend calls **POST /chat** on your API for the in-app AI Assistant. Follow this document exactly so the frontend works without changes.
 
 ---
 
-## What the frontend needs
+## 1. What the frontend does (do not change the frontend)
 
-One authenticated endpoint: **POST /chat** (or **POST /api/chat** if the app uses an `/api` prefix).  
-The frontend sends the user's message and (optionally) conversation history; the backend returns the AI reply.
+- Sends **POST** to: `{API_BASE_URL}/chat` (then if 404, tries `{API_BASE_URL}/api/chat`).
+- **Headers:** `Content-Type: application/json`, `Authorization: Bearer <access_token>` (same JWT as `/courses/:id/lessons`, etc.).
+- **Body:** `{ "message": "<user text>", "history": [ { "role": "user"|"assistant", "content": "..." }, ... ] }`
+- Expects **200** with JSON that has a string reply in one of these keys (first found wins):  
+  `reply`, `content`, `message`, `response`, `text`, `result`, `output`  
+  or inside `data.reply`, `data.content`, etc.
+- On **401:** show "Unauthorized" / session expired.
+- On **400/502/503/500:** show `error.message` or `message` from your JSON (frontend shows it in the chat).
 
-### 1. Endpoint: **POST /chat**
+Your backend must: Implement **POST /chat** at the same base URL as your other routes (e.g. `https://learning-managment-platform-backend.onrender.com/chat`), with same JWT auth as other protected routes.
 
-- **Auth:** Required. Same JWT as other protected routes (`Authorization: Bearer <token>`). Return 401 if missing or invalid.
+---
 
-**Request body (JSON):**
+## 2. Contract: request and response
 
-```json
-{
-  "message": "User's message text here",
-  "history": []
-}
-```
+**Request:**
 
-- **message** (string, required): Latest user message.
-- **history** (array, optional): Previous turns. Items can be `{ "role": "user" | "assistant", "content": "..." }`. You can ignore it if you don't use context.
+- **Method:** POST
+- **Path:** `/chat` (or `/api/chat` if you mount under `/api`).
+- **Headers:** `Content-Type: application/json`, `Authorization: Bearer <access_token>` (required).
+- **Body (JSON):**
+  ```json
+  { "message": "What is React?", "history": [ { "role": "user", "content": "Hi" }, { "role": "assistant", "content": "Hello!" } ] }
+  ```
+  - `message` (string, required).
+  - `history` (array, optional).
 
 **Success (200):**
 
 ```json
-{
-  "reply": "The AI assistant's reply text here"
-}
+{ "reply": "React is a JavaScript library..." }
 ```
 
-Or:
+or
 
 ```json
-{
-  "content": "The AI assistant's reply text here"
-}
+{ "content": "React is a JavaScript library..." }
 ```
 
-The frontend accepts either **reply** or **content** (and also **message**, **response**, **text**, **result**, **output**).
+**Errors (JSON):**
 
-**Errors:**
-
-- **401:** Missing/invalid token → `{ "error": { "message": "Unauthorized" } }` or `{ "message": "Unauthorized" }`.
-- **400:** Invalid/empty body → `{ "error": { "message": "Message is required" } }`.
-- **502/503:** Upstream AI down → `{ "error": { "message": "AI service temporarily unavailable" } }`.
-- **500:** Internal error → `{ "error": { "message": "Something went wrong. Please try again." } }`. Do not expose stack traces.
+- **401:** `{ "error": { "message": "Unauthorized" } }`
+- **400:** `{ "error": { "message": "Message is required" } }`
+- **502/503:** `{ "error": { "message": "AI service temporarily unavailable" } }`
+- **500:** `{ "error": { "message": "Something went wrong. Please try again." } }`
 
 ---
 
-### 2. Backend behaviour (recommended)
+## 3. Implementation options
 
-1. Validate JWT and set `req.user.id` (and optionally `req.user.name`).
-2. Validate message (non-empty string, optional max length e.g. 4000).
-3. Call your AI provider and return the reply.
+### Option A – Proxy to Hugging Face (recommended)
 
-#### Option A – Proxy to Hugging Face Space (recommended)
+1. **POST** `https://gowrisankara-qwen-qwen2-5-coder-32b-instruct.hf.space/call/predict`  
+   **Body:** `{ "data": [ "<user message>" ] }`  
+   → get `event_id` from response.
 
-- **Space URL:** `https://gowrisankara-qwen-qwen2-5-coder-32b-instruct.hf.space`
-- Use a Hugging Face token only on the server (e.g. env `HF_TOKEN` or `HUGGINGFACE_TOKEN`).
+2. **GET** `https://gowrisankara-qwen-qwen2-5-coder-32b-instruct.hf.space/call/predict/<event_id>`  
+   → poll until done; parse SSE data: line; extract reply string.
 
-From the backend:
+3. Return **200** with `{ "reply": "<parsed text>" }`.
 
-1. **POST**  
-   `https://gowrisankara-qwen-qwen2-5-coder-32b-instruct.hf.space/call/predict`  
-   (or `/call/chat` if the Space uses that)  
-   **Body:** `{ "data": [message] }`  
-   **Headers:** `Content-Type: application/json`, and if needed `Authorization: Bearer <HF_TOKEN>`.
+4. On Space 500 or timeout → **502** with `{ "error": { "message": "AI service temporarily unavailable" } }`.
 
-2. From the response take `event_id`, then **GET**  
-   `https://gowrisankara-qwen-qwen2-5-coder-32b-instruct.hf.space/call/predict/<event_id>`  
-   (same auth if required) until you get the final result (SSE or JSON).
+5. Optional: use `HF_TOKEN` in env and send `Authorization: Bearer <HF_TOKEN>` to the Space.
 
-3. Parse the model reply and return it as **reply** (or **content**) in your JSON.
+### Option B – Other AI API
 
-4. If the Space returns 500 or times out, return 502 with a friendly message.
-
-#### Option B – Another AI API
-
-Use any HTTP chat API (OpenAI, Anthropic, etc.). Send message (and optionally history) in the format that API expects, then map the response to `{ "reply": "..." }` or `{ "content": "..." }`.
+Call OpenAI/Anthropic/etc. from the server; map response to a single string; return `{ "reply": "..." }` or `{ "content": "..." }`.
 
 ---
 
-### 3. CORS and base URL
-
-- **CORS:** Same as the rest of the API: allow the frontend origin(s) (e.g. `http://localhost:5173`, production URL) with `credentials: true`.
-- **Base URL:** Frontend uses `https://learning-managment-platform-backend.onrender.com`. So the full URL it will call is:  
-  `https://learning-managment-platform-backend.onrender.com/chat`  
-  or `https://learning-managment-platform-backend.onrender.com/api/chat` if routes are under `/api`.
-
----
-
-### 4. Example (Node/Express)
+## 4. Example code (Node.js + Express)
 
 ```js
-router.post('/chat', authMiddleware, async (req, res) => {
+app.post('/chat', authMiddleware, async (req, res) => {
   try {
     const { message } = req.body
     if (!message || typeof message !== 'string' || !message.trim()) {
       return res.status(400).json({ error: { message: 'Message is required' } })
     }
-    const reply = await chatService.getReply(message.trim()) // your HF proxy or other API
+    const reply = await getReplyFromHuggingFace(message.trim())
     return res.json({ reply })
-  } catch (e) {
-    if (e.code === 'UPSTREAM_ERROR') return res.status(502).json({ error: { message: 'AI service temporarily unavailable' } })
+  } catch (err) {
+    if (err.code === 'UPSTREAM_ERROR' || err.message?.includes('timeout')) {
+      return res.status(502).json({ error: { message: 'AI service temporarily unavailable' } })
+    }
+    console.error('Chat error', err)
     return res.status(500).json({ error: { message: 'Something went wrong. Please try again.' } })
   }
 })
+async function getReplyFromHuggingFace(userMessage) {
+  const base = 'https://gowrisankara-qwen-qwen2-5-coder-32b-instruct.hf.space'
+  const token = process.env.HF_TOKEN
+  const postRes = await fetch(`${base}/call/predict`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...(token && { Authorization: `Bearer ${token}` }) },
+    body: JSON.stringify({ data: [userMessage] }),
+  })
+  if (!postRes.ok) throw Object.assign(new Error('Upstream error'), { code: 'UPSTREAM_ERROR' })
+  const postData = await postRes.json()
+  const eventId = postData?.event_id
+  if (!eventId) throw new Error('No event_id')
+  for (let i = 0; i < 60; i++) {
+    await new Promise((r) => setTimeout(r, 1500))
+    const getRes = await fetch(`${base}/call/predict/${eventId}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+    if (!getRes.ok) continue
+    const text = await getRes.text()
+    const dataMatch = text.match(/^data:\s*(\[.*\])\s*$/m)
+    if (dataMatch) {
+      try {
+        const arr = JSON.parse(dataMatch[1])
+        const last = Array.isArray(arr) ? arr[arr.length - 1] : arr
+        if (typeof last === 'string') return last
+        if (last?.content) return String(last.content)
+      } catch (_) {}
+    }
+  }
+  throw new Error('Timeout')
+}
 ```
 
 ---
 
-### 5. Checklist for backend
+## 5. CORS and URL
 
-- [ ] **POST /chat** (or **POST /api/chat**) exists and is protected with the same JWT auth as other routes.
-- [ ] Request: JSON with **message** (string) and optional **history** (array).
-- [ ] Response: 200 with `{ "reply": "..." }` or `{ "content": "..." }`.
-- [ ] Errors: 401, 400, 502/503, 500 with JSON **error.message** or **message**.
-- [ ] If using the Hugging Face Space: call it only from the server with a server-side HF token; do not expose the token to the frontend.
-- [ ] CORS allows the frontend origin with credentials.
+- **CORS:** Allow frontend origin (e.g. `http://localhost:5173`, production URL) with `credentials: true`.
+- **URL:** Register **POST /chat** on the same app as `/auth` and `/courses` (e.g. `https://learning-managment-platform-backend.onrender.com/chat`).
 
-Once this is in place, the frontend will call **POST /chat** first and only fall back to direct Hugging Face (or show “unavailable”) when the backend is not deployed or returns an error.
+---
+
+## 6. How to test
+
+```bash
+curl -X POST https://learning-managment-platform-backend.onrender.com/chat \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -d '{"message":"Hello","history":[]}'
+```
+
+Expected: **200** and body like `{"reply":"Hello! How can I help?"}`.
+
+---
+
+## 7. Checklist for backend
+
+- [ ] **POST /chat** on same app as **/auth** and **/courses** (path **/chat** or **/api/chat**).
+- [ ] Same JWT middleware as other protected routes.
+- [ ] Read **message** (required) and **history** (optional) from **req.body**.
+- [ ] **200** with `{ "reply": "<string>" }` or `{ "content": "<string>" }`.
+- [ ] **401/400/502/503/500** with JSON `{ "error": { "message": "..." } }` or `{ "message": "..." }`.
+- [ ] If using HF Space: call it only from server; store token in env.
+- [ ] CORS allows frontend origin with credentials.
+
+File in your project: **docs/BACKEND_CHATBOT_PROMPT.md** — you can share this file with the backend team or copy the content above.
